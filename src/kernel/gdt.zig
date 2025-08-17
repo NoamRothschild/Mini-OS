@@ -1,5 +1,3 @@
-const std = @import("std");
-
 const Access = packed struct {
     // Accessed (CPU sets to 1 when segment is accessed)
     a: u1 = 0,

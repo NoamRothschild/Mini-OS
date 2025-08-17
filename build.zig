@@ -45,6 +45,7 @@ pub fn build(b: *std.Build) void {
 
     const root_file = "src/main.zig";
     const linker_script = "src/linker.ld";
+    const out_iso = "zig-out/kernel.iso";
 
     // Create kernel executable
     const kernel = b.addExecutable(.{
@@ -57,7 +58,7 @@ pub fn build(b: *std.Build) void {
 
     const assembly_files = [_]struct { []const u8, []const u8 }{
         .{ "src/entry.asm", "entry" },
-        .{ "src/console/root.asm", "console" },
+        .{ "src/kernel/console.asm", "console" },
     };
 
     for (assembly_files) |pair|
@@ -70,17 +71,17 @@ pub fn build(b: *std.Build) void {
     _ = wf.addCopyFile(kernel.getEmittedBin(), "tmpsys/kernel/boot/kernel.elf");
 
     // Copy GRUB configuration to bootloader location
-    _ = wf.addCopyFile(b.path("bootloader/grub.cfg"), "tmpsys/kernel/boot/grub/grub.cfg");
+    _ = wf.addCopyFile(b.path("src/bootloader/grub.cfg"), "tmpsys/kernel/boot/grub/grub.cfg");
 
     // taking the temp system directory and copying into the global system dir its contents
     const copy_built_system = b.addInstallDirectory(.{
         .source_dir = wf.getDirectory().path(b, "tmpsys/kernel"),
-        .install_dir = .{ .custom = "../system/kernel" },
+        .install_dir = .{ .custom = "sysroot/kernel" },
         .install_subdir = "",
     });
     copy_built_system.step.dependOn(&kernel.step);
 
-    const makeiso = b.addSystemCommand(&[_][]const u8{ "grub-mkrescue", "-o", "system/kernel.iso", "system/kernel/" });
+    const makeiso = b.addSystemCommand(&[_][]const u8{ "grub-mkrescue", "-o", out_iso, "zig-out/sysroot/kernel/" });
     makeiso.step.dependOn(&copy_built_system.step);
 
     const compile_steps = [_]*std.Build.Step{ &kernel.step, &copy_built_system.step, &makeiso.step };
@@ -89,7 +90,7 @@ pub fn build(b: *std.Build) void {
     }
 
     {
-        const run_qemu = b.addSystemCommand(&[_][]const u8{ "qemu-system-x86_64", "-cdrom", "system/kernel.iso" });
+        const run_qemu = b.addSystemCommand(&[_][]const u8{ "qemu-system-i386", "-cdrom", out_iso });
         const qemu_step = b.step("run", "compile & launch qemu");
 
         qemu_step.dependOn(default_step);
@@ -100,7 +101,7 @@ pub fn build(b: *std.Build) void {
     }
 
     {
-        const run_qemu = b.addSystemCommand(&[_][]const u8{ "qemu-system-x86_64", "-cdrom", "system/kernel.iso", "-s", "-S" });
+        const run_qemu = b.addSystemCommand(&[_][]const u8{ "qemu-system-i386", "-cdrom", out_iso, "-s", "-S" });
         const qemu_step = b.step("debug", "compile & launch qemu with a debugger");
 
         qemu_step.dependOn(default_step);

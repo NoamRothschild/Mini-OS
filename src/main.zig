@@ -1,6 +1,6 @@
-const console = @import("console/root.zig");
+const console = @import("kernel/console.zig");
 const config = @import("config.zig");
-const gdt = @import("GDT/gdt.zig");
+const gdt = @import("kernel/gdt.zig");
 
 extern var stack_len: u32;
 
