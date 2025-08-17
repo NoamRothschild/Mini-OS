@@ -41,8 +41,6 @@ section .multiboot
     %error "EITHER MBOOT1 OR MBOOT2 MUST BE SELECTED, ALSO UPDATE grub.cfg ACORDINGLY"
 %endif
 
-%include "src/GDT/root.asm"
-
 section .text
 bits 32
 global _start
@@ -54,15 +52,6 @@ _start:
     lea esp, [stack_top]
     mov ebp, esp
 
-    lgdt [GDT_Descriptor]
-    mov ax, DATA_SEG
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-    jmp CODE_SEG:_start.flush_cs
-.flush_cs:
     call kmain
     
 .keep_alive:
