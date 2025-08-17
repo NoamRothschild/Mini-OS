@@ -1,3 +1,5 @@
+const std = @import("std");
+
 const Access = packed struct {
     // Accessed (CPU sets to 1 when segment is accessed)
     a: u1 = 0,
@@ -38,7 +40,49 @@ pub const SegmentDescriptor = packed struct {
     base_high: u8,
 };
 
-var entries: [3]SegmentDescriptor = undefined;
+pub const Tss = packed struct {
+    link: u16,
+    _reserved1: u16,
+    esp0: u32,
+    ss0: u16,
+    _reserved2: u16,
+    esp1: u32,
+    ss1: u16,
+    _reserved3: u16,
+    esp2: u32,
+    ss2: u16,
+    _reserved4: u16,
+    cr3: u32,
+    eip: u32,
+    eflags: u32,
+    eax: u32,
+    ecx: u32,
+    edx: u32,
+    ebx: u32,
+    esp: u32,
+    ebp: u32,
+    esi: u32,
+    edi: u32,
+    es: u16,
+    _reserved5: u16,
+    cs: u16,
+    _reserved6: u16,
+    ss: u16,
+    _reserved7: u16,
+    ds: u16,
+    _reserved8: u16,
+    fs: u16,
+    _reserved9: u16,
+    gs: u16,
+    _reserved10: u16,
+    ldtr: u16,
+    _reserved11: u32,
+    iopb: u16,
+    ssp: u32,
+};
+
+var entries: [4]SegmentDescriptor = undefined;
+var tss_entry = std.mem.zeroes(Tss);
 
 pub const descriptor = packed struct {
     size: u16,
@@ -50,9 +94,21 @@ var gdt_descriptor = descriptor{
     .start = undefined,
 };
 
+const offsets = struct {
+    nulld: usize = 0,
+    kernel_codeseg: usize = 1,
+    kernel_dataseg: usize = 2,
+    tss: usize = 3,
+}{};
+
+fn tableOffsetOf(offset: usize) usize {
+    return offset * 8;
+}
+
+extern var stack_top: u32;
 inline fn setTable() void {
     // Null Descriptor
-    entries[0] = makeState(.{
+    entries[offsets.nulld] = makeState(.{
         .base = 0,
         .limit = 0,
         .access = .{},
@@ -60,7 +116,7 @@ inline fn setTable() void {
     });
 
     // Kernel Mode Code Segment
-    entries[1] = makeState(.{
+    entries[offsets.kernel_codeseg] = makeState(.{
         .base = 0x00000000,
         .limit = 0xFFFFF,
         .access = kernel_code_access,
@@ -68,12 +124,23 @@ inline fn setTable() void {
     });
 
     // Kernel Mode Data Segment
-    entries[2] = makeState(.{
+    entries[offsets.kernel_dataseg] = makeState(.{
         .base = 0x00000000,
         .limit = 0xFFFFF,
         .access = kernel_data_access,
         .flags = 0xC,
     });
+
+    entries[offsets.tss] = makeState(.{
+        .base = @intFromPtr(&tss_entry),
+        .limit = @sizeOf(Tss) - 1,
+        .access = task_state_access,
+        .flags = 0x0,
+    });
+
+    tss_entry.ss0 = @truncate(tableOffsetOf(offsets.kernel_dataseg));
+    tss_entry.esp0 = stack_top;
+    tss_entry.iopb = @sizeOf(Tss);
 }
 
 pub fn init() void {
@@ -95,6 +162,14 @@ pub fn init() void {
         : [GDT_Descriptor] "{eax}" (&gdt_descriptor),
         : "eax"
     );
+
+    asm volatile (
+        \\ mov %[tss_descriptor_offset], %ax
+        \\ ltr %ax
+        :
+        : [tss_descriptor_offset] "i" (comptime tableOffsetOf(offsets.tss)),
+        : "eax"
+    );
 }
 
 fn makeState(config: struct { limit: u20, base: u32, access: Access, flags: u4 }) SegmentDescriptor {
@@ -106,9 +181,4 @@ fn makeState(config: struct { limit: u20, base: u32, access: Access, flags: u4 }
         .access = config.access,
         .flags = config.flags,
     };
-}
-
-/// returns the offset of each segment based on its index in the table
-fn offsetAt(entry_index: usize) usize {
-    return entry_index * 8;
 }

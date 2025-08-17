@@ -45,6 +45,7 @@ section .text
 bits 32
 global _start
 global stack_len
+global stack_top
 
 extern kmain
 
