@@ -1,6 +1,7 @@
 const console = @import("kernel/console.zig");
 const config = @import("config.zig");
 const gdt = @import("kernel/gdt.zig");
+const debug = @import("debug.zig");
 
 extern var stack_len: u32;
 
@@ -10,6 +11,7 @@ pub export fn kmain() callconv(.C) void {
 
     gdt.init();
     console.printf("GDT Initialized!\n", .{});
+    debug.printf("GDT Initialized\n", .{});
 
     // const colored_char: u16 = console.vgaEntry('h', 3);
 
