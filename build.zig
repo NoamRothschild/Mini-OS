@@ -59,6 +59,7 @@ pub fn build(b: *std.Build) void {
     const assembly_files = [_]struct { []const u8, []const u8 }{
         .{ "src/entry.asm", "entry" },
         .{ "src/kernel/console.asm", "console" },
+        .{ "src/kernel/idt.asm", "idt" },
     };
 
     for (assembly_files) |pair|
@@ -81,7 +82,7 @@ pub fn build(b: *std.Build) void {
     });
     copy_built_system.step.dependOn(&kernel.step);
 
-    const makeiso = b.addSystemCommand(&[_][]const u8{ "grub-mkrescue", "-o", out_iso, "zig-out/sysroot/kernel/" });
+    const makeiso = b.addSystemCommand(&[_][]const u8{ "grub2-mkrescue", "-o", out_iso, "zig-out/sysroot/kernel/" });
     makeiso.step.dependOn(&copy_built_system.step);
 
     const compile_steps = [_]*std.Build.Step{ &kernel.step, &copy_built_system.step, &makeiso.step };

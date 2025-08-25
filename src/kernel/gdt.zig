@@ -84,17 +84,17 @@ pub const Tss = packed struct {
 var entries: [4]SegmentDescriptor = undefined;
 var tss_entry = std.mem.zeroes(Tss);
 
-pub const descriptor = packed struct {
+pub const Descriptor = packed struct {
     size: u16,
     start: [*]SegmentDescriptor,
 };
 
-var gdt_descriptor = descriptor{
+var gdt_descriptor = Descriptor{
     .size = entries.len * @sizeOf(SegmentDescriptor) - 1,
     .start = undefined,
 };
 
-const offsets = struct {
+pub const offsets = struct {
     nulld: usize = 0,
     kernel_codeseg: usize = 1,
     kernel_dataseg: usize = 2,
@@ -106,7 +106,7 @@ fn tableOffsetOf(offset: usize) usize {
 }
 
 extern var stack_top: u32;
-inline fn setTable() void {
+inline fn initTable() void {
     // Null Descriptor
     entries[offsets.nulld] = makeState(.{
         .base = 0,
@@ -145,7 +145,7 @@ inline fn setTable() void {
 
 pub fn init() void {
     gdt_descriptor.start = &entries;
-    setTable();
+    initTable();
 
     asm volatile (
         \\ lgdt (%eax)
