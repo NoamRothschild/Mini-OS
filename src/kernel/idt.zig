@@ -1,6 +1,7 @@
 const std = @import("std");
 const gdt = @import("gdt.zig");
 const debug = @import("../debug.zig");
+const syscall = @import("syscall.zig");
 
 pub const SegmentSelector = packed struct {
     rpl: u2,
@@ -33,67 +34,33 @@ pub const Descriptor = packed struct {
     size: u16,
     start: [*]SegmentDescriptor,
 };
+comptime {
+    const size = @bitSizeOf(Descriptor);
+
+    if (size != 48)
+        @compileError(std.fmt.comptimePrint("[*] SegmentDescriptor inside Descriptor definition expanded to unexpected size: {d}", .{@bitSizeOf(Descriptor) - 16}));
+}
 
 var idt_descriptor = Descriptor{
     .size = entries.len * @sizeOf(SegmentDescriptor) - 1,
     .start = undefined,
 };
 
-fn trapIsrDump(id: u32) callconv(.C) void {
-    switch (id) {
-        0 => debug.printf("Int {d} caught: Division by zero\n", .{id}),
-        1 => debug.printf("Int {d} caught: Debug\n", .{id}),
-        2 => debug.printf("Int {d} caught: Non maskable interrupt\n", .{id}),
-        3 => debug.printf("Int {d} caught: Breakpoint\n", .{id}),
-        4 => debug.printf("Int {d} caught: Overflow\n", .{id}),
-        5 => debug.printf("Int {d} caught: Bound range exceeded\n", .{id}),
-        6 => debug.printf("Int {d} caught: Invalid opcode\n", .{id}),
-        7 => debug.printf("Int {d} caught: Device not available\n", .{id}),
-        8 => debug.printf("Int {d} caught: Double fault\n", .{id}),
-        9 => debug.printf("Int {d} caught: Coprocessor segment overrun\n", .{id}),
-        10 => debug.printf("Int {d} caught: Invalid TSS\n", .{id}),
-        11 => debug.printf("Int {d} caught: Segment not present\n", .{id}),
-        12 => debug.printf("Int {d} caught: Stack segment fault\n", .{id}),
-        13 => debug.printf("Int {d} caught: General protection fault\n", .{id}),
-        14 => debug.printf("Int {d} caught: Page fault\n", .{id}),
-        15 => debug.printf("Int {d} caught: Reserved\n", .{id}),
-        16 => debug.printf("Int {d} caught: x87 floating point exception\n", .{id}),
-        17 => debug.printf("Int {d} caught: Alignment check\n", .{id}),
-        18 => debug.printf("Int {d} caught: Machine check\n", .{id}),
-        19 => debug.printf("Int {d} caught: SIMD floating point exception\n", .{id}),
-        20 => debug.printf("Int {d} caught: Virtualization exception\n", .{id}),
-        21 => debug.printf("Int {d} caught: Control protection exception\n", .{id}),
-        22 => debug.printf("Int {d} caught: Reserved\n", .{id}),
-        23 => debug.printf("Int {d} caught: Reserved\n", .{id}),
-        24 => debug.printf("Int {d} caught: Reserved\n", .{id}),
-        25 => debug.printf("Int {d} caught: Reserved\n", .{id}),
-        26 => debug.printf("Int {d} caught: Reserved\n", .{id}),
-        27 => debug.printf("Int {d} caught: Reserved\n", .{id}),
-        28 => debug.printf("Int {d} caught: Reserved\n", .{id}),
-        29 => debug.printf("Int {d} caught: Reserved\n", .{id}),
-        30 => debug.printf("Int {d} caught: Reserved\n", .{id}),
-        31 => debug.printf("Int {d} caught: Reserved\n", .{id}),
-        else => debug.printf("Unknown trap gate caught with id {d}\n", .{id}),
-    }
-}
-comptime {
-    @export(&trapIsrDump, .{ .name = "idt_trap_handler", .linkage = .strong });
-}
 /// given an index, return a corresponding function ptr that when called will execute defaultIsr(index)
 extern fn idt_entryFuncByIndex(index: u32) callconv(.C) u32;
 
 inline fn initTable() void {
-    // const interrupt_gate = makeState(.{
-    //     .offset = @intFromPtr(defaultIsr),
-    //     .segment_selector = .{
-    //         .index = gdt.offsets.kernel_codeseg,
-    //         .rpl = 0x0, // TODO: Check if does not conflict with dpl somehow
-    //         .ti = 0,
-    //     },
-    //     .gate_type = gate_types.intr_gate32bit,
-    //     .dpl = 0x3, // everyone can call these interrupts using `int`
-    //     .p = 1,
-    // });
+    const syscall_gate = makeState(.{
+        .offset = @intFromPtr(&syscall.syscall_handler),
+        .segment_selector = .{
+            .index = gdt.offsets.kernel_codeseg,
+            .rpl = 0x0, // TODO: Check if does not conflict with dpl somehow
+            .ti = 0,
+        },
+        .gate_type = gate_types.intr_gate32bit,
+        .dpl = 0x3, // everyone can call these interrupts using `int`
+        .p = 1,
+    });
 
     // const task_gate = makeState(.{
     //     .offset = 0,
@@ -120,9 +87,14 @@ inline fn initTable() void {
             .dpl = 0x0,
             .p = 1,
         });
+
+    entries[syscall.syscall_number] = syscall_gate;
 }
 
 pub fn init() void {
+    @import("interrupts.zig").init(); // currently here to force add file to compilation
+    @import("syscall.zig").init(); // currently here to force add file to compilation
+
     idt_descriptor.start = &entries;
     initTable();
 

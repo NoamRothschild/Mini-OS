@@ -88,6 +88,12 @@ pub const Descriptor = packed struct {
     size: u16,
     start: [*]SegmentDescriptor,
 };
+comptime {
+    const size = @bitSizeOf(Descriptor);
+
+    if (size != 48)
+        @compileError(std.fmt.comptimePrint("[*] SegmentDescriptor inside Descriptor definition expanded to unexpected size: {d}", .{@bitSizeOf(Descriptor) - 16}));
+}
 
 var gdt_descriptor = Descriptor{
     .size = entries.len * @sizeOf(SegmentDescriptor) - 1,
