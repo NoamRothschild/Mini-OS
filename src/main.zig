@@ -2,26 +2,34 @@ const console = @import("kernel/console.zig");
 const config = @import("config.zig");
 const gdt = @import("kernel/gdt.zig");
 const idt = @import("kernel/idt.zig");
+const timer = @import("kernel/timer.zig");
 const debug = @import("debug.zig");
 const std = @import("std");
 
 extern var stack_len: u32;
+
+fn infoPrint(str: []const u8) void {
+    console.printf("{s}\n", .{str});
+    debug.printf("{s}\n", .{str});
+}
 
 pub export fn kmain() callconv(.C) void {
     console.initialize();
     console.printf("Hello {s}, {d}\n", .{ "world", stack_len });
 
     gdt.init();
-    console.printf("GDT Initialized!\n", .{});
-    debug.printf("GDT Initialized\n", .{});
+    infoPrint("GDT Initialized");
+
+    const frequency = 50; // the higher the freq, the more times the timer callback gets called
+    timer.init(frequency);
+    infoPrint("Timer Initialized");
 
     idt.init();
-    console.printf("IDT Initialized!\n", .{});
-    debug.printf("IDT Initialized\n", .{});
+    infoPrint("IDT Initialized");
 
     debug.printf("testing irq handler is working... ", .{});
     asm volatile (
-        \\ int $33
+        \\ int $36
     );
 
     debug.printf("running a syscall... ", .{});
@@ -29,6 +37,8 @@ pub export fn kmain() callconv(.C) void {
         \\ mov $12, %eax
         \\ int $144
     );
+
+    while (true) {}
 
     debug.printf("dividing by zero (testing cpu exception)... ", .{});
     asm volatile (

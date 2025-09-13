@@ -119,6 +119,9 @@ pub fn init() void {
         : [IDT_Descriptor] "{eax}" (&idt_descriptor),
         : "eax"
     );
+
+    // enable interrupts
+    asm volatile ("sti");
 }
 
 fn makeState(config: struct { offset: u32, segment_selector: SegmentSelector, gate_type: u4, dpl: u2, p: u1 }) SegmentDescriptor {
