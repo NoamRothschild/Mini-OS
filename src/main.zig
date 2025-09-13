@@ -3,6 +3,7 @@ const config = @import("config.zig");
 const gdt = @import("kernel/gdt.zig");
 const idt = @import("kernel/idt.zig");
 const debug = @import("debug.zig");
+const std = @import("std");
 
 extern var stack_len: u32;
 
@@ -18,8 +19,18 @@ pub export fn kmain() callconv(.C) void {
     console.printf("IDT Initialized!\n", .{});
     debug.printf("IDT Initialized\n", .{});
 
-    // asm volatile ("int $0x80");
-    asm volatile ("int $0x12");
+    debug.printf("testing irq handler is working... ", .{});
+    asm volatile (
+        \\ int $33
+    );
+
+    debug.printf("running a syscall... ", .{});
+    asm volatile (
+        \\ mov $12, %eax
+        \\ int $144
+    );
+
+    debug.printf("dividing by zero (testing cpu exception)... ", .{});
     asm volatile (
         \\ xor %ebx, %ebx
         \\ div %ebx

@@ -48,6 +48,7 @@ var idt_descriptor = Descriptor{
 
 /// given an index, return a corresponding function ptr that when called will execute defaultIsr(index)
 extern fn idt_entryFuncByIndex(index: u32) callconv(.C) u32;
+extern fn idt_irqByIndex(index: u32) callconv(.C) u32;
 
 inline fn initTable() void {
     const syscall_gate = makeState(.{
@@ -88,12 +89,26 @@ inline fn initTable() void {
             .p = 1,
         });
 
+    for (0..16) |i|
+        entries[i + 32] = makeState(.{
+            .offset = idt_irqByIndex(i),
+            .segment_selector = .{
+                .index = gdt.offsets.kernel_codeseg,
+                .rpl = 0x0,
+                .ti = 0,
+            },
+            .gate_type = gate_types.intr_gate32bit,
+            .dpl = 0x0,
+            .p = 1,
+        });
+
     entries[syscall.syscall_number] = syscall_gate;
 }
 
 pub fn init() void {
     @import("interrupts.zig").init(); // currently here to force add file to compilation
     @import("syscall.zig").init(); // currently here to force add file to compilation
+    @import("pic.zig").init(); // remaps pic ports to gates 32-47
 
     idt_descriptor.start = &entries;
     initTable();

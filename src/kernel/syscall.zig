@@ -7,7 +7,7 @@ pub extern fn syscall_handler() callconv(.C) void; // this is the wrapper, setti
 // it calls syscallHandler(esp -> cpuState)
 
 export fn syscallHandler(cpu_state: *const cpuState) void {
-    debug.printf("Syscall called!:\n{any}\n", .{cpu_state.*});
+    debug.printf("Syscall called!:\n{any}\n\n", .{cpu_state.*});
 }
 
 pub fn init() void {}

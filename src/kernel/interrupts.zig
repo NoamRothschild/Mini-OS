@@ -51,7 +51,7 @@ fn trapInterruptDump(cpu_state: *const cpuState) callconv(.C) void {
         22...31 => "Reserved\n",
         else => "Unknown trap gate caught\n",
     };
-    debug.printf("{s}interrupt {d} caught: {s}CPU state:\n{any}\n", .{ (if (cpu_state.interrupt_id <= 31) "Hardware " else ""), cpu_state.interrupt_id, err_msg, cpu_state.* });
+    debug.printf("{s}interrupt {d} caught: {s}CPU state:\n{any}\n\n", .{ (if (cpu_state.interrupt_id <= 31) "Hardware " else ""), cpu_state.interrupt_id, err_msg, cpu_state.* });
 
     debug.printf("halting cpu...\n", .{});
     asm volatile ("hlt");
