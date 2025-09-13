@@ -18,7 +18,6 @@ extern irqHandler
 %endmacro
 
 %macro IRQ_GATE 1
-  cli
   push dword 0  ; push err code of 0 to align with same cpuState struct
   push dword %1 ; push irq gate number as interrupt number
   jmp irq_gate_stub
@@ -224,7 +223,6 @@ irq_gate_stub:
 
   popa
   add esp, 8 ; remove error code && trap index
-  cli
   iret
 
 ; ----- syscall -----
