@@ -1,4 +1,5 @@
 const std = @import("std");
+const log = std.log;
 const debug = @import("../debug.zig");
 const cpuState = @import("interrupts.zig").cpuState;
 
@@ -7,7 +8,7 @@ pub extern fn syscall_handler() callconv(.C) void; // this is the wrapper, setti
 // it calls syscallHandler(esp -> cpuState)
 
 export fn syscallHandler(cpu_state: *const cpuState) void {
-    debug.printf("Syscall called!:\n{any}\n\n", .{cpu_state.*});
+    log.debug("Syscall called!:\n{any}\n\n", .{cpu_state.*});
 }
 
 pub fn init() void {}

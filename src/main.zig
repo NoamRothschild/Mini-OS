@@ -5,12 +5,13 @@ const idt = @import("kernel/idt.zig");
 const timer = @import("kernel/timer.zig");
 const debug = @import("debug.zig");
 const std = @import("std");
+const log = std.log;
 
 extern var stack_len: u32;
 
 fn infoPrint(str: []const u8) void {
     console.printf("{s}\n", .{str});
-    debug.printf("{s}\n", .{str});
+    log.info("{s}\n", .{str});
 }
 
 pub export fn kmain() callconv(.C) void {
@@ -27,12 +28,12 @@ pub export fn kmain() callconv(.C) void {
     idt.init();
     infoPrint("IDT Initialized");
 
-    debug.printf("testing irq handler is working... ", .{});
+    log.debug("testing irq handler is working... ", .{});
     asm volatile (
         \\ int $36
     );
 
-    debug.printf("running a syscall... ", .{});
+    log.debug("running a syscall... ", .{});
     asm volatile (
         \\ mov $12, %eax
         \\ int $144
@@ -40,7 +41,7 @@ pub export fn kmain() callconv(.C) void {
 
     while (true) {}
 
-    debug.printf("dividing by zero (testing cpu exception)... ", .{});
+    log.debug("dividing by zero (testing cpu exception)... ", .{});
     asm volatile (
         \\ xor %ebx, %ebx
         \\ div %ebx
@@ -61,3 +62,9 @@ pub export fn kmain() callconv(.C) void {
 
     while (true) {}
 }
+
+pub const panic = @import("debug.zig").panic;
+pub const std_options = std.Options{
+    .log_level = .debug,
+    .logFn = debug.logFn,
+};

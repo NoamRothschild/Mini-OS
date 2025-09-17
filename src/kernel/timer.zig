@@ -1,3 +1,5 @@
+const std = @import("std");
+const log = std.log;
 const debug = @import("../debug.zig");
 const io = @import("io.zig");
 const divident = 1193180;
@@ -5,8 +7,8 @@ var tick: usize = 0;
 
 // called when IRQ0 is called in the idt. see pic.zig
 pub fn callback() callconv(.C) void {
-    tick += 1;
-    // debug.printf("T{d} ", .{tick});
+    tick +%= 1;
+    // log.debug("T{d} ", .{tick});
 }
 
 // https://web.archive.org/web/20220723171914/http://www.jamesmolloy.co.uk/tutorial_html/5.-IRQs%20and%20the%20PIT.html

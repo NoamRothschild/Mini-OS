@@ -3,6 +3,7 @@ const cpuState = @import("interrupts.zig").cpuState;
 const debug = @import("../debug.zig");
 const timer = @import("timer.zig");
 const keyboard = @import("keyboard.zig");
+const log = @import("std").log;
 
 const pic_master_offset: u8 = 0x20;
 const pic_slave_offset: u8 = 0x28;
@@ -69,9 +70,8 @@ export fn irqHandler(cpu_state: *cpuState) callconv(.C) void {
         0 => timer.callback(),
         1 => keyboard.callback(),
         else => {
-            debug.printf("an irq has been called from pic number {d}\n", .{irq_id});
-
-            debug.printf("cpu state: {any}\n\n", .{cpu_state.*});
+            log.debug("an irq has been called from pic number {d}\n", .{irq_id});
+            log.debug("cpu state: {any}\n\n", .{cpu_state.*});
         },
     }
 }
