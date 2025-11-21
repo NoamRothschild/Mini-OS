@@ -2,6 +2,7 @@ const io = @import("io.zig");
 const console = @import("console.zig");
 const debug = @import("../debug.zig");
 const std = @import("std");
+const log = std.log;
 
 const data_port = 0x60;
 const control_port = 0x64;
@@ -35,7 +36,7 @@ const KeyState = enum(u1) {
 };
 
 pub fn callback() void {
-    debug.printf("key pressed: ", .{});
+    log.debug("key pressed: ", .{});
     const scancode: u8 = io.inb(data_port);
     const state = KeyState.fromScancode(scancode);
     const scancode_flat = scancode & (~@as(u8, 0x80));
@@ -47,7 +48,7 @@ pub fn callback() void {
     if (scancode_flat == scancodes.caps_lock and state == .pressed)
         is_caps_on = !is_caps_on;
 
-    debug.printf("{d}, {s}\n", .{ scancode_flat, if (state == .pressed) "pressed" else "released" });
+    log.debug("{d}, {s}\n", .{ scancode_flat, if (state == .pressed) "pressed" else "released" });
     if (state == .pressed) {
         switch (scancode_flat) {
             scancodes.arrow_up => console.changeRow(-1),
