@@ -27,6 +27,10 @@ pub export fn kmain() callconv(.C) void {
     idt.init();
     infoPrint("IDT Initialized");
 
+    debug.printf("CPU vendor: {s}\n", .{debug.getVendor()});
+
+    debug.printf("features: {any}\n", .{debug.getFeatures()});
+
     debug.printf("testing irq handler is working... ", .{});
     asm volatile (
         \\ int $36
