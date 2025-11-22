@@ -71,8 +71,8 @@ pub fn build(b: *std.Build) void {
     // creating a temp system folder, placing all neccesities there
     _ = wf.addCopyFile(kernel.getEmittedBin(), "tmpsys/kernel/boot/kernel.elf");
 
-    // Copy GRUB configuration to bootloader location
-    _ = wf.addCopyFile(b.path("src/bootloader/grub.cfg"), "tmpsys/kernel/boot/grub/grub.cfg");
+    // Copy Limine configuration to bootloader location
+    _ = wf.addCopyFile(b.path("src/bootloader/limine.cfg"), "tmpsys/kernel/boot/limine.cfg");
 
     // taking the temp system directory and copying into the global system dir its contents
     const copy_built_system = b.addInstallDirectory(.{
@@ -82,10 +82,42 @@ pub fn build(b: *std.Build) void {
     });
     copy_built_system.step.dependOn(&kernel.step);
 
-    const makeiso = b.addSystemCommand(&[_][]const u8{ "grub2-mkrescue", "-o", out_iso, "zig-out/sysroot/kernel/" });
-    makeiso.step.dependOn(&copy_built_system.step);
+    // Copy Limine boot files to sysroot
+    // limine.sys must be in root, /boot, /limine, or /boot/limine directories
+    const copy_limine_boot = b.addSystemCommand(&[_][]const u8{ "bash", "-c", "mkdir -p zig-out/sysroot/kernel/boot/limine && cp /usr/share/limine/limine-cd.bin /usr/share/limine/limine-cd-efi.bin /usr/share/limine/BOOTX64.EFI zig-out/sysroot/kernel/boot/ && cp /usr/share/limine/limine.sys zig-out/sysroot/kernel/boot/limine/" });
+    copy_limine_boot.step.dependOn(&copy_built_system.step);
 
-    const compile_steps = [_]*std.Build.Step{ &kernel.step, &copy_built_system.step, &makeiso.step };
+    // Create ISO using xorriso with Limine boot options
+    const makeiso = b.addSystemCommand(&[_][]const u8{
+        "xorriso",
+        "-as",
+        "mkisofs",
+        "-b",
+        "boot/limine-cd.bin",
+        "-no-emul-boot",
+        "-boot-load-size",
+        "4",
+        "-boot-info-table",
+        "--efi-boot",
+        "boot/BOOTX64.EFI",
+        "-efi-boot-part",
+        "--efi-boot-image",
+        "--protective-msdos-label",
+        "zig-out/sysroot/kernel",
+        "-o",
+        out_iso,
+    });
+    makeiso.step.dependOn(&copy_limine_boot.step);
+
+    // Install Limine bootloader files into the ISO (must run after ISO is created)
+    // This will add the bootloader and make the ISO bootable
+    const install_limine = b.addSystemCommand(&[_][]const u8{
+        "limine-deploy",
+        out_iso,
+    });
+    install_limine.step.dependOn(&makeiso.step);
+
+    const compile_steps = [_]*std.Build.Step{ &kernel.step, &copy_built_system.step, &makeiso.step, &install_limine.step };
     for (compile_steps) |step| {
         default_step.dependOn(step);
     }
