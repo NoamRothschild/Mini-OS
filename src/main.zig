@@ -6,6 +6,7 @@ const timer = @import("kernel/timer.zig");
 const debug = @import("debug.zig");
 const std = @import("std");
 const log = std.log;
+const paging = @import("kernel/paging.zig");
 
 extern var stack_len: u32;
 
@@ -27,6 +28,11 @@ pub export fn kmain() callconv(.C) void {
 
     idt.init();
     infoPrint("IDT Initialized");
+
+    paging.init();
+    infoPrint("Paging initialized");
+
+    log.info("kernel kmain: 0x{x:0>8}\n", .{@intFromPtr(&kmain)});
 
     log.debug("CPU vendor: {s}\n", .{debug.getVendor()});
 
