@@ -24,11 +24,8 @@ fn panicFn(err: []const u8, ra: ?usize) noreturn {
     _ = ra;
 
     printf("PANIC!: {s}\n", .{err});
-    printf("return address: 0x{X} frame address: 0x{X}\n", .{ @returnAddress(), @frameAddress() });
-    printf("stack starts at: 0x{X} end: 0x{X}\n", .{
-        entry.stack_top,
-        entry.stack_bottom,
-    });
+    printf("return address: 0x{x} frame address: 0x{x}\n", .{ @returnAddress(), @frameAddress() });
+    printf("stack starts at: 0x{x}\n", .{@intFromPtr(entry.stack_top)});
 
     while (true) {}
 }

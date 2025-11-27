@@ -2,6 +2,7 @@ const std = @import("std");
 const debug = @import("debug.zig");
 const io = @import("arch/x86/io.zig");
 const vga = @import("drivers/vga.zig");
+const mem = @import("mem/heap.zig");
 
 comptime {
     _ = @import("entry.zig");
@@ -21,11 +22,15 @@ fn vgaOKPrint(msg: []const u8) void {
     vga.print("{s}\n", .{msg});
 }
 
-pub fn kmain() callconv(.C) noreturn {
+pub fn kmain() !void {
     vga.init();
     vgaOKPrint("VGA mode initialized");
 
-    while (true) {}
+    @panic("intentional panic");
 }
 
 pub const panic = @import("debug.zig").panic;
+pub const std_options = std.Options{
+    .log_level = .debug,
+    .logFn = debug.logFn,
+};

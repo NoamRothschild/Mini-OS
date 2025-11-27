@@ -38,9 +38,15 @@ SECTIONS {
         *(COMMON)
         *(.bss)
         kernel_bss_end = .;
+    }
+
+    .heap ALIGN(4K) : AT(ADDR(.heap) - 0xC0000000) {
+        kernel_heap_start = .;
+        *(.heap)
+        kernel_heap_end = .;
         kernel_end = .;
     }
-    
+
     kernel_physical_start = kernel_start - 0xC0000000;
     kernel_physical_end = kernel_end - 0xC0000000;
 

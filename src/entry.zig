@@ -1,5 +1,6 @@
 const paging = @import("arch/x86/paging.zig");
-const kmain = @import("main.zig").kmain;
+const root = @import("main.zig");
+const debug = @import("debug.zig");
 
 const multiboot2_header_magic = 0xe85250d6;
 const grub_multiboot_architecture_i386 = 0;
@@ -77,14 +78,17 @@ export fn _start() align(16) linksection(".boot") callconv(.naked) noreturn {
     while (true) {}
 }
 
-export fn higher_half_kernel() align(16) callconv(.naked) noreturn {
-    asm volatile (
-        \\ mov %[stack_top], %esp
-        \\ jmp %[kmain:P]
+export fn higher_half_kernel() align(16) callconv(.C) noreturn {
+    asm volatile ("mov %[stack_top], %esp"
         :
         : [stack_top] "{edx}" (stack_top),
-          [kmain] "X" (&kmain),
     );
 
-    while (true) {}
+    root.kmain() catch |err| {
+        debug.printf("Error: {s}\n", .{@errorName(err)});
+    };
+
+    while (true) {
+        asm volatile ("hlt");
+    }
 }
