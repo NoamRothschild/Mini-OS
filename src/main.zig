@@ -7,7 +7,7 @@ comptime {
     _ = @import("entry.zig");
 }
 
-pub fn kmain() noreturn {
+pub fn kmain() callconv(.C) noreturn {
     vga.init();
     vga.print("vga screen initialized!\n", .{});
 
