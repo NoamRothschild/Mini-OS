@@ -23,7 +23,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const default_step = b.getInstallStep();
 
-    const root_file = "src/entry.zig";
+    const root_file = "src/main.zig";
     const linker_script = "src/linker.ld";
     const out_iso = "zig-out/kernel.iso";
 

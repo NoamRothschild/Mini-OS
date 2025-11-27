@@ -1,3 +1,5 @@
+const kmain = @import("main.zig").kmain;
+
 const multiboot2_header_magic = 0xe85250d6;
 const grub_multiboot_architecture_i386 = 0;
 
@@ -11,20 +13,18 @@ pub const MultiBootHeaderV2 = extern struct {
 
 export const multiboot_header: MultiBootHeaderV2 align(4) linksection(".multiboot") = .{};
 
-export var stack_bottom: [16 * 4096]u8 align(16) linksection(".bss") = undefined;
-const stack_top = &stack_bottom[stack_bottom.len - 4];
+pub export var stack_bottom: [16 * 4096]u8 align(16) linksection(".bss") = undefined;
+pub export var stack_top = &stack_bottom[stack_bottom.len - 4];
 
+// TODO: after paging kernel add linksection(".boot")
 export fn _start() align(16) linksection(".boot") callconv(.naked) noreturn {
-    asm volatile ("mov %[stack_top], %esp"
+    asm volatile (
+        \\ mov %[stack_top], %esp
+        \\ jmp %[kmain:P]
         :
         : [stack_top] "{edx}" (stack_top),
+          [kmain] "X" (&kmain),
     );
-
-    const screen: [*]volatile u16 = @ptrFromInt(0xB8000);
-
-    const color: u16 = 2 | (0 << 4);
-    screen[0] = @as(u16, 'O') | (color << 8);
-    screen[1] = @as(u16, 'K') | (color << 8);
 
     while (true) {}
 }
