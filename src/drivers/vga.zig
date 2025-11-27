@@ -5,10 +5,10 @@ const vga_width = 80;
 const vga_height = 25;
 const vga_size = vga_width * vga_height;
 
-var g_row: usize = 0;
-var g_column: usize = 0;
-var g_color: Color = .init(.light_gray, .black);
-var g_buffer: [*]volatile u16 = @ptrFromInt(0xB8000);
+pub var g_row: usize = 0;
+pub var g_column: usize = 0;
+pub var g_color: Color = .init(.light_gray, .black);
+pub var g_buffer: [*]volatile u16 = @ptrFromInt(0xB8000);
 
 pub const ColorType = enum(u4) {
     black = 0,

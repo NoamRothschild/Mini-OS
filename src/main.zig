@@ -7,9 +7,23 @@ comptime {
     _ = @import("entry.zig");
 }
 
+fn vgaOKPrint(msg: []const u8) void {
+    const og_color = vga.g_color;
+    defer vga.g_color = og_color;
+
+    vga.g_color = .init(.light_gray, .black);
+    vga.puts("[ ");
+    vga.g_color = .init(.green, .black);
+    vga.puts("OK");
+    vga.g_color = .init(.light_gray, .black);
+    vga.puts(" ] ");
+    vga.g_color = .init(.white, .black);
+    vga.print("{s}\n", .{msg});
+}
+
 pub fn kmain() callconv(.C) noreturn {
     vga.init();
-    vga.print("vga screen initialized!\n", .{});
+    vgaOKPrint("VGA mode initialized");
 
     while (true) {}
 }
