@@ -1,7 +1,6 @@
 const std = @import("std");
 const log = std.log;
 const io = @import("arch/x86/io.zig");
-const entry = @import("entry.zig");
 pub const COM1 = 0x03F8;
 
 pub const outWriter = std.io.Writer(void, error{}, callback){ .context = {} };
@@ -25,7 +24,7 @@ fn panicFn(err: []const u8, ra: ?usize) noreturn {
 
     printf("PANIC!: {s}\n", .{err});
     printf("return address: 0x{x} frame address: 0x{x}\n", .{ @returnAddress(), @frameAddress() });
-    printf("stack starts at: 0x{x}\n", .{@intFromPtr(entry.stack_top)});
+    printf("stack starts at: 0x{x}\n", .{@intFromPtr(@import("arch/x86/entry.zig").stack_top)});
 
     while (true) {}
 }

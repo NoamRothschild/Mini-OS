@@ -5,7 +5,7 @@ const vga = @import("drivers/vga.zig");
 const mem = @import("mem/heap.zig");
 
 comptime {
-    _ = @import("entry.zig");
+    _ = @import("arch/x86/entry.zig");
 }
 
 fn vgaOKPrint(msg: []const u8) void {

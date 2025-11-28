@@ -1,6 +1,6 @@
-const paging = @import("arch/x86/paging.zig");
-const root = @import("main.zig");
-const debug = @import("debug.zig");
+const paging = @import("paging.zig");
+const root = @import("../../main.zig");
+const debug = @import("../../debug.zig");
 
 const multiboot2_header_magic = 0xe85250d6;
 const grub_multiboot_architecture_i386 = 0;
