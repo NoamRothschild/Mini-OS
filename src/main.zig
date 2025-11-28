@@ -2,6 +2,7 @@ const std = @import("std");
 const debug = @import("debug.zig");
 const io = @import("arch/x86/io.zig");
 const vga = @import("drivers/vga.zig");
+const gdt = @import("arch/x86/gdt.zig");
 const mem = @import("mem/heap.zig");
 
 comptime {
@@ -26,7 +27,8 @@ pub fn kmain() !void {
     vga.init();
     vgaOKPrint("VGA mode initialized");
 
-    @panic("intentional panic");
+    gdt.init();
+    vgaOKPrint("GDT && TSS initialized");
 }
 
 pub const panic = @import("debug.zig").panic;
