@@ -2,6 +2,7 @@ an os in zig and nasm :0
 
 ### note
 
-The OS is currently going through a rewrite.
+> Due to a lack of time the continuation of this hobby os project has been delayed until further notice.
 
-You can check out the old kernel [here](https://github.com/NoamRothschild/Mini-OS/tree/old_kernel). 
+The OS is currently going through a rewrite. You can check out the old kernel [here](https://github.com/NoamRothschild/Mini-OS/tree/old_kernel). 
+
